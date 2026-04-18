@@ -505,14 +505,6 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
-## 👥 Authors
-
-- Your Name - Initial work
-
-## 🎓 Version History
-
-- **v1.0.0** - Initial release with core features
-
 ## 📞 Support
 
 For support, email support@thesis-management.com or open an issue in the repository.
