@@ -217,7 +217,7 @@ src/
 |----------|-------------|
 | `VITE_SUPABASE_URL` | Your Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key |
-| `VITE_API_URL` | API base URL (default: http://localhost:3000) |
+| `VITE_API_URL` | API base URL (default: https://diuthesisflow.web.app) |
 
 ## 🗄️ Database Schema
 
