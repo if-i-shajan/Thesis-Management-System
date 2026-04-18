@@ -21,7 +21,7 @@ A modern, full-stack web application for managing university thesis/final year p
   <tr>
     <td align="center">
       <a href="https://github.com/if-i-shajan">
-        <img src="https://github.com/if-i-shajan.png" width="100px;" alt="Shajan"/>
+        <img src="https://github.com/if-i-shajan.png" width="100px" height="100px" style="object-fit:cover;" alt="Shajan"/>
         <br/>
         <b>J.M. Ifthakharul Islam Shajan</b>
       </a>
@@ -30,7 +30,7 @@ A modern, full-stack web application for managing university thesis/final year p
     </td>
     <td align="center">
       <a href="https://github.com/hshasan2004">
-        <img src="https://github.com/hshasan2004.png" width="100px;" alt="Hasan"/>
+        <img src="https://github.com/hshasan2004.png" width="100px" height="100px" style="object-fit:cover;" alt="Hasan"/>
         <br/>
         <b>Mohammad Hasan</b>
       </a>
