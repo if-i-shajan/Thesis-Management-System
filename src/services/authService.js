@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 
 const ALLOWED_SIGNUP_ROLES = ['student', 'supervisor']
+const BANGLADESH_PHONE_REGEX = /^\+8801[3-9]\d{8}$/
 
 export const authService = {
     async signup(email, password, fullName, role = 'student', additionalInfo = {}) {
@@ -25,6 +26,13 @@ export const authService = {
                 return {
                     success: false,
                     error: 'Please fill in all required registration fields.',
+                }
+            }
+
+            if (!BANGLADESH_PHONE_REGEX.test(phoneNumber)) {
+                return {
+                    success: false,
+                    error: 'Phone number must start with +880 and be a valid Bangladesh number',
                 }
             }
 

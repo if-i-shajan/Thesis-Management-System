@@ -14,10 +14,18 @@ import {
     Briefcase,
     Building2,
     CalendarDays,
+    ChevronDown,
 } from 'lucide-react'
 
 const inputBaseClass =
     'h-11 w-full rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-3 text-[13.5px] text-[#1A1F36] placeholder:text-[#B0BAD0] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD020]'
+
+const getSelectClass = (hasValue) =>
+    `h-11 w-full appearance-none rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-10 text-[13.5px] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD018] ${
+        hasValue ? 'text-[#1A1F36]' : 'text-[#B0BAD0]'
+    }`
+
+const BANGLADESH_PHONE_REGEX = /^\+8801[3-9]\d{8}$/
 
 const iconClass = 'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A0ABCC]'
 
@@ -56,7 +64,7 @@ export const RegisterPage = () => {
         lastName: '',
         email: '',
         registrationNumber: '',
-        phoneNumber: '',
+        phoneNumber: '+88',
         password: '',
         confirmPassword: '',
         role: 'student',
@@ -84,7 +92,29 @@ export const RegisterPage = () => {
     ]
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+
+        if (name === 'phoneNumber') {
+            const sanitized = value.replace(/[^\d+]/g, '')
+            const digits = sanitized.replace(/\D/g, '')
+
+            let normalized
+            if (digits.startsWith('88')) {
+                normalized = `+${digits}`
+            } else if (digits.length === 0) {
+                normalized = '+88'
+            } else {
+                normalized = `+88${digits}`
+            }
+
+            normalized = normalized.slice(0, 14)
+            if (normalized.length < 3) normalized = '+88'
+
+            setFormData({ ...formData, phoneNumber: normalized })
+            return
+        }
+
+        setFormData({ ...formData, [name]: value })
     }
 
     const setRole = (role) => {
@@ -135,6 +165,11 @@ export const RegisterPage = () => {
 
         if (!formData.phoneNumber.trim()) {
             setError('Phone Number is required')
+            return
+        }
+
+        if (!BANGLADESH_PHONE_REGEX.test(formData.phoneNumber.trim())) {
+            setError('Phone number must start with +880 and be a valid Bangladesh number')
             return
         }
 
@@ -320,9 +355,23 @@ export const RegisterPage = () => {
                                 id="phoneNumber"
                                 name="phoneNumber"
                                 type="tel"
-                                placeholder="Phone Number"
+                                placeholder="Enter phone number (e.g., +8801XXXXXXXXX)"
                                 value={formData.phoneNumber}
                                 onChange={handleChange}
+                                onKeyDown={(e) => {
+                                    if (
+                                        (e.key === 'Backspace' || e.key === 'Delete') &&
+                                        e.currentTarget.selectionStart <= 3
+                                    ) {
+                                        e.preventDefault()
+                                    }
+                                }}
+                                onFocus={() => {
+                                    if (!formData.phoneNumber || !formData.phoneNumber.startsWith('+88')) {
+                                        setFormData({ ...formData, phoneNumber: '+88' })
+                                    }
+                                }}
+                                maxLength={14}
                                 className={inputBaseClass}
                                 required
                             />
@@ -335,15 +384,21 @@ export const RegisterPage = () => {
                             Department
                         </label>
                         <Building2 className={iconClass} />
+                        <ChevronDown
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A0ABCC]"
+                            aria-hidden="true"
+                        />
                         <select
                             id="department"
                             name="department"
                             value={formData.department}
                             onChange={handleChange}
-                            className={`${inputBaseClass} appearance-none`}
+                            className={getSelectClass(Boolean(formData.department))}
                             required
                         >
-                            <option value="">Department</option>
+                            <option value="" disabled selected>
+                                Select Department
+                            </option>
                             {departments.map((department) => (
                                 <option key={department.value} value={department.value}>
                                     {department.label}
@@ -378,15 +433,21 @@ export const RegisterPage = () => {
                                     Designation
                                 </label>
                                 <Briefcase className={iconClass} />
+                                <ChevronDown
+                                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A0ABCC]"
+                                    aria-hidden="true"
+                                />
                                 <select
                                     id="designation"
                                     name="designation"
                                     value={formData.designation}
                                     onChange={handleChange}
-                                    className={`${inputBaseClass} appearance-none`}
+                                    className={getSelectClass(Boolean(formData.designation))}
                                     required
                                 >
-                                    <option value="">Designation</option>
+                                    <option value="" disabled selected>
+                                        Select Designation
+                                    </option>
                                     {designations.map((designation) => (
                                         <option key={designation.value} value={designation.value}>
                                             {designation.label}
