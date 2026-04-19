@@ -64,6 +64,20 @@ export const supervisorService = {
         }
     },
 
+    async getSupervisorByUserId(userId) {
+        try {
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(collection(db, 'supervisors'), where('user_id', '==', userId))
+            const snapshot = await getDocs(q)
+            const first = snapshot.docs[0]
+            if (!first) return { success: true, data: null }
+            const supervisor = await attachProfile(mapDoc(first))
+            return { success: true, data: supervisor }
+        } catch (error) {
+            return { success: false, error: error.message }
+        }
+    },
+
     async createSupervisor(supervisorData) {
         try {
             if (!db) throw new Error('Firebase is not configured.')

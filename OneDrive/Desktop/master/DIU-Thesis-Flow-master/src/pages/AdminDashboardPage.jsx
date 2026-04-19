@@ -4,13 +4,15 @@ import { projectService } from '../services/projectService'
 import { supervisorService } from '../services/supervisorService'
 import { Card } from '../components/Card'
 import { LoadingSpinner } from '../components/LoadingSpinner'
-import { BarChart3, Users, BookOpen, Settings } from 'lucide-react'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../services/firebase'
+import { Users, BookOpen, Settings } from 'lucide-react'
 
 export const AdminDashboardPage = () => {
     const [stats, setStats] = useState({
         projects: 0,
         supervisors: 0,
-        students: 0,
+        users: 0,
     })
     const [loading, setLoading] = useState(true)
 
@@ -21,13 +23,19 @@ export const AdminDashboardPage = () => {
     const fetchStats = async () => {
         setLoading(true)
         try {
-            const projectsResult = await projectService.getProjects()
-            const supervisorsResult = await supervisorService.getSupervisors()
+            const [projectsResult, supervisorsResult, usersSnap] = await Promise.all([
+                projectService.getProjects(),
+                supervisorService.getSupervisors(),
+                getDocs(collection(db, 'user_profiles')),
+            ])
+
+            const allUsers = usersSnap.docs.map((snap) => snap.data())
+            const activeStudents = allUsers.filter((user) => (user.role || '').toLowerCase() === 'student')
 
             setStats({
                 projects: projectsResult.data?.length || 0,
                 supervisors: supervisorsResult.data?.length || 0,
-                students: 0,
+                users: activeStudents.length > 0 ? activeStudents.length : allUsers.length,
             })
         } catch (err) {
             console.error('Failed to fetch stats')
@@ -52,8 +60,8 @@ export const AdminDashboardPage = () => {
             color: 'bg-green-100 text-green-600',
         },
         {
-            title: 'Active Students',
-            value: stats.students,
+            title: 'Registered Users',
+            value: stats.users,
             icon: Users,
             color: 'bg-purple-100 text-purple-600',
         },

@@ -98,6 +98,24 @@ export const projectService = {
         }
     },
 
+    async getProjectsByCreator(userId) {
+        try {
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(collection(db, 'projects'), where('created_by', '==', userId))
+            const snapshot = await getDocs(q)
+            const projects = snapshot.docs
+                .map(mapDoc)
+                .sort((a, b) => {
+                    const aTime = a?.created_at?.toDate?.()?.getTime?.() || 0
+                    const bTime = b?.created_at?.toDate?.()?.getTime?.() || 0
+                    return bTime - aTime
+                })
+            return { success: true, data: projects }
+        } catch (error) {
+            return { success: false, error: error.message }
+        }
+    },
+
     async updateProject(id, updates) {
         try {
             if (!db) throw new Error('Firebase is not configured.')

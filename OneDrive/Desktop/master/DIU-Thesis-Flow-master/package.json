@@ -11,7 +11,8 @@
         "setup:supabase": "node scripts/setup-supabase.js",
         "check:supabase": "node scripts/setup-supabase.js",
         "deploy:firebase": "npm run build && firebase deploy",
-        "seed:admins": "node scripts/seed-firebase-admins.js"
+        "seed:admins": "node scripts/seed-firebase-admins.js",
+        "seed:supervisors": "node scripts/seed-firebase-supervisors.js"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.38.0",

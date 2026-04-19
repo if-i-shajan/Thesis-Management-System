@@ -26,8 +26,8 @@ export const Navigation = () => {
             { label: 'My Requests', path: '/student/requests' },
         ],
         supervisor: [
+            { label: 'Dashboard', path: '/supervisor/dashboard' },
             { label: 'Requests', path: '/supervisor/requests' },
-            { label: 'Students', path: '/supervisor/students' },
             { label: 'Projects', path: '/supervisor/projects' },
         ],
         admin: [

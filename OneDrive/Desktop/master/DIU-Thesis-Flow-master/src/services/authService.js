@@ -135,6 +135,34 @@ export const authService = {
             }
 
             await setDoc(doc(db, 'user_profiles', credential.user.uid), profilePayload, { merge: true })
+
+            if (normalizedRole === 'student') {
+                const studentPayload = {
+                    id: credential.user.uid,
+                    user_id: credential.user.uid,
+                    registration_number: registrationNumber || null,
+                    department: department || null,
+                    semester: Number.isNaN(semesterNumber) ? null : semesterNumber,
+                    created_at: serverTimestamp(),
+                    updated_at: serverTimestamp(),
+                }
+                await setDoc(doc(db, 'students', credential.user.uid), studentPayload, { merge: true })
+            }
+
+            if (normalizedRole === 'supervisor') {
+                const supervisorPayload = {
+                    id: credential.user.uid,
+                    user_id: credential.user.uid,
+                    department: department || null,
+                    designation: designation || null,
+                    research_area: researchAreas || null,
+                    years_of_experience: yearsOfExperience || null,
+                    created_at: serverTimestamp(),
+                    updated_at: serverTimestamp(),
+                }
+                await setDoc(doc(db, 'supervisors', credential.user.uid), supervisorPayload, { merge: true })
+            }
+
             console.log('[Signup] Profile upsert', profilePayload)
 
             return {
