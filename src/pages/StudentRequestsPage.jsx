@@ -21,7 +21,7 @@ export const StudentRequestsPage = () => {
     const fetchRequests = async () => {
         setLoading(true)
         try {
-            const result = await requestService.getRequestsForStudent(user.id)
+            const result = await requestService.getRequestsForStudent(user.uid)
             if (result.success) {
                 setRequests(result.data)
                 setError(null)
@@ -83,7 +83,7 @@ export const StudentRequestsPage = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
                                             <h3 className="font-bold text-lg text-gray-900">
-                                                {request.supervisors?.user_id || 'Unknown Supervisor'}
+                                                {request.supervisors?.user_profiles?.full_name || 'Unknown Supervisor'}
                                             </h3>
                                             <div className="flex items-center gap-2">
                                                 {getStatusIcon(request.status)}

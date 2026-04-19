@@ -1,16 +1,50 @@
-import { getSupabaseClient } from './supabase'
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
+} from 'firebase/firestore'
+import { db } from './firebase'
+
+const mapDoc = (snap) => ({ id: snap.id, ...snap.data() })
+
+const getUserProfile = async (userId) => {
+    if (!db || !userId) return null
+    const profileSnap = await getDoc(doc(db, 'user_profiles', userId))
+    return profileSnap.exists() ? mapDoc(profileSnap) : null
+}
+
+const getSupervisor = async (supervisorId) => {
+    if (!db || !supervisorId) return null
+    const supervisorSnap = await getDoc(doc(db, 'supervisors', supervisorId))
+    if (!supervisorSnap.exists()) return null
+    const supervisor = mapDoc(supervisorSnap)
+    const profile = await getUserProfile(supervisor.user_id || supervisor.id)
+    return { ...supervisor, user_profiles: profile }
+}
 
 export const projectService = {
     async getProjects() {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('projects')
-                .select('*, supervisors(full_name, department)')
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(collection(db, 'projects'), orderBy('created_at', 'desc'))
+            const snapshot = await getDocs(q)
+            const projects = await Promise.all(
+                snapshot.docs.map(async (snap) => {
+                    const project = mapDoc(snap)
+                    const createdBy = await getUserProfile(project.created_by)
+                    const supervisor = await getSupervisor(project.supervisor_id)
+                    return { ...project, created_by: createdBy, supervisor_id: supervisor }
+                })
+            )
+            return { success: true, data: projects }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -18,15 +52,13 @@ export const projectService = {
 
     async getProjectById(id) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('projects')
-                .select('*, supervisors(full_name, department, research_area)')
-                .eq('id', id)
-                .single()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const snap = await getDoc(doc(db, 'projects', id))
+            if (!snap.exists()) throw new Error('Project not found')
+            const project = mapDoc(snap)
+            const createdBy = await getUserProfile(project.created_by)
+            const supervisor = await getSupervisor(project.supervisor_id)
+            return { success: true, data: { ...project, created_by: createdBy, supervisor_id: supervisor } }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -34,15 +66,22 @@ export const projectService = {
 
     async getProjectsByCategory(category) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('projects')
-                .select('*, supervisors(full_name, department)')
-                .eq('category', category)
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(
+                collection(db, 'projects'),
+                where('category', '==', category),
+                orderBy('created_at', 'desc')
+            )
+            const snapshot = await getDocs(q)
+            const projects = await Promise.all(
+                snapshot.docs.map(async (snap) => {
+                    const project = mapDoc(snap)
+                    const createdBy = await getUserProfile(project.created_by)
+                    const supervisor = await getSupervisor(project.supervisor_id)
+                    return { ...project, created_by: createdBy, supervisor_id: supervisor }
+                })
+            )
+            return { success: true, data: projects }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -50,14 +89,10 @@ export const projectService = {
 
     async createProject(projectData) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('projects')
-                .insert([projectData])
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const payload = { ...projectData, created_at: serverTimestamp() }
+            const docRef = await addDoc(collection(db, 'projects'), payload)
+            return { success: true, data: [{ id: docRef.id, ...payload }] }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -65,15 +100,10 @@ export const projectService = {
 
     async updateProject(id, updates) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('projects')
-                .update(updates)
-                .eq('id', id)
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            await updateDoc(doc(db, 'projects', id), updates)
+            const snap = await getDoc(doc(db, 'projects', id))
+            return { success: true, data: [mapDoc(snap)] }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -81,13 +111,8 @@ export const projectService = {
 
     async deleteProject(id) {
         try {
-            const supabase = getSupabaseClient()
-            const { error } = await supabase
-                .from('projects')
-                .delete()
-                .eq('id', id)
-
-            if (error) throw error
+            if (!db) throw new Error('Firebase is not configured.')
+            await deleteDoc(doc(db, 'projects', id))
             return { success: true }
         } catch (error) {
             return { success: false, error: error.message }

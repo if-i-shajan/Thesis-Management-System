@@ -1,26 +1,25 @@
 import { useEffect } from 'react'
+import { onAuthStateChanged } from 'firebase/auth'
 import { useAuthStore } from '../context/store'
 import { authService } from '../services/authService'
-import { isSupabaseConfigured, supabase } from '../services/supabase'
+import { auth, isFirebaseConfigured } from '../services/firebase'
 
 export const useAuth = () => {
     const { user, profile, setUser, setProfile, setLoading, setError } = useAuthStore()
 
     useEffect(() => {
-        if (!isSupabaseConfigured || !supabase) {
-            setError('Supabase is not configured. Set valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values in .env.')
+        if (!isFirebaseConfigured || !auth) {
+            setError('Firebase is not configured. Set valid VITE_FIREBASE_* values in .env.local.')
             setLoading(false)
             return
         }
 
         checkAuth()
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user) {
-                setUser(session.user)
-                const profileResult = await authService.getUserProfile(session.user.id)
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setUser(user)
+                const profileResult = await authService.getUserProfile(user.uid)
                 if (profileResult.success) {
                     setProfile(profileResult.data)
                 }
@@ -30,7 +29,7 @@ export const useAuth = () => {
             }
         })
 
-        return () => subscription?.unsubscribe()
+        return () => unsubscribe()
     }, [])
 
     const checkAuth = async () => {
@@ -39,13 +38,23 @@ export const useAuth = () => {
             const userResult = await authService.getCurrentUser()
             if (userResult.success && userResult.user) {
                 setUser(userResult.user)
-                const profileResult = await authService.getUserProfile(userResult.user.id)
+                const profileResult = await authService.getUserProfile(userResult.user.uid)
                 if (profileResult.success) {
                     setProfile(profileResult.data)
+                } else {
+                    // Profile doesn't exist yet, but user is authenticated
+                    console.warn('Profile not found for user:', userResult.user.uid)
                 }
+            } else {
+                // No user logged in
+                setUser(null)
+                setProfile(null)
             }
         } catch (error) {
-            setError(error.message)
+            // Silently catch errors on initial load if no user is logged in
+            console.debug('Auth check error:', error.message)
+            setUser(null)
+            setProfile(null)
         } finally {
             setLoading(false)
         }

@@ -118,6 +118,10 @@ CREATE POLICY "Users can update their own profile"
   ON user_profiles FOR UPDATE
   USING (auth.uid() = id);
 
+CREATE POLICY "Users can insert their own profile"
+  ON user_profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 -- POLICIES FOR supervisors
 CREATE POLICY "Everyone can view supervisors"
   ON supervisors FOR SELECT

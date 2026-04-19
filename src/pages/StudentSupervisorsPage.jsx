@@ -37,15 +37,15 @@ export const StudentSupervisorsPage = () => {
             if (result.success) {
                 setSupervisors(result.data)
 
-                // Check existing request statuses
-                const statuses = {}
-                for (const supervisor of result.data) {
-                    const statusResult = await requestService.getRequestStatus(user.id, supervisor.id)
-                    if (statusResult.data) {
-                        statuses[supervisor.id] = statusResult.data.status
+                // Batch fetch all request statuses in one query (much faster!)
+                if (result.data.length > 0) {
+                    const supervisorIds = result.data.map((s) => s.id)
+                    const statusResult = await requestService.getRequestStatusesBatch(user.uid, supervisorIds)
+                    if (statusResult.success) {
+                        setRequestStatuses(statusResult.data)
                     }
                 }
-                setRequestStatuses(statuses)
+
                 setError(null)
             } else {
                 setError(result.error)
@@ -76,7 +76,7 @@ export const StudentSupervisorsPage = () => {
 
     const handleRequest = async (supervisorId) => {
         try {
-            const result = await requestService.sendRequest(user.id, supervisorId)
+            const result = await requestService.sendRequest(user.uid, supervisorId)
 
             if (result.success) {
                 setRequestStatuses({

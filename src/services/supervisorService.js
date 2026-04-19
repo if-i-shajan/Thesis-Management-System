@@ -1,16 +1,35 @@
-import { getSupabaseClient } from './supabase'
+import {
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    updateDoc,
+    where,
+} from 'firebase/firestore'
+import { db } from './firebase'
+
+const mapDoc = (snap) => ({ id: snap.id, ...snap.data() })
+
+const attachProfile = async (supervisor) => {
+    if (!db) return supervisor
+    const profileSnap = await getDoc(doc(db, 'user_profiles', supervisor.user_id || supervisor.id))
+    const profile = profileSnap.exists() ? mapDoc(profileSnap) : null
+    return { ...supervisor, user_profiles: profile }
+}
 
 export const supervisorService = {
     async getSupervisors() {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('supervisors')
-                .select('*, user_profiles(full_name, email)')
-                .order('department', { ascending: true })
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(collection(db, 'supervisors'), orderBy('department', 'asc'))
+            const snapshot = await getDocs(q)
+            const supervisors = await Promise.all(
+                snapshot.docs.map(async (snap) => attachProfile(mapDoc(snap)))
+            )
+            return { success: true, data: supervisors }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -18,15 +37,11 @@ export const supervisorService = {
 
     async getSupervisorById(id) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('supervisors')
-                .select('*, user_profiles(full_name, email)')
-                .eq('id', id)
-                .single()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const snap = await getDoc(doc(db, 'supervisors', id))
+            if (!snap.exists()) throw new Error('Supervisor not found')
+            const supervisor = await attachProfile(mapDoc(snap))
+            return { success: true, data: supervisor }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -34,14 +49,16 @@ export const supervisorService = {
 
     async getSupervisorsByDepartment(department) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('supervisors')
-                .select('*, user_profiles(full_name, email)')
-                .eq('department', department)
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(
+                collection(db, 'supervisors'),
+                where('department', '==', department)
+            )
+            const snapshot = await getDocs(q)
+            const supervisors = await Promise.all(
+                snapshot.docs.map(async (snap) => attachProfile(mapDoc(snap)))
+            )
+            return { success: true, data: supervisors }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -49,14 +66,9 @@ export const supervisorService = {
 
     async createSupervisor(supervisorData) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('supervisors')
-                .insert([supervisorData])
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const docRef = await addDoc(collection(db, 'supervisors'), supervisorData)
+            return { success: true, data: [{ id: docRef.id, ...supervisorData }] }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -64,15 +76,10 @@ export const supervisorService = {
 
     async updateSupervisor(id, updates) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('supervisors')
-                .update(updates)
-                .eq('id', id)
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            await updateDoc(doc(db, 'supervisors', id), updates)
+            const snap = await getDoc(doc(db, 'supervisors', id))
+            return { success: true, data: [mapDoc(snap)] }
         } catch (error) {
             return { success: false, error: error.message }
         }

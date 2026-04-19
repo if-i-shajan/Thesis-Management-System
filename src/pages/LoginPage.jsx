@@ -109,13 +109,27 @@ export const LoginPage = () => {
         setLoading(true)
         setError(null)
 
+        const timeoutId = setTimeout(() => {
+            setLoading(false)
+            setError('Login is taking too long (30+ seconds). Check your connection and try again.')
+        }, 30000) // Increased to 30 seconds (database queries can take time)
+
         try {
+            const loginStart = Date.now()
+            console.log('[Login] Starting authentication...')
+
             const result = await authService.login(formData.email, formData.password)
+            console.log(`[Login] Auth completed in ${Date.now() - loginStart}ms`, result)
 
             if (result.success) {
                 setUser(result.data.user)
 
-                const profileResult = await authService.getUserProfile(result.data.user.id)
+                const profileStart = Date.now()
+                console.log('[Login] Fetching user profile...')
+
+                const profileResult = await authService.getUserProfile(result.data.user.uid)
+                console.log(`[Login] Profile fetched in ${Date.now() - profileStart}ms`, profileResult)
+
                 if (profileResult.success) {
                     setProfile(profileResult.data)
 
@@ -125,14 +139,18 @@ export const LoginPage = () => {
                         admin: '/admin/dashboard',
                     }
 
+                    console.log(`[Login] Total time: ${Date.now() - loginStart}ms. Redirecting to ${dashboards[profileResult.data.role]}...`)
                     navigate(dashboards[profileResult.data.role] || '/student/projects')
+                } else {
+                    setError(profileResult.error || 'Failed to load user profile')
                 }
             } else {
                 setError(result.error)
             }
         } catch (err) {
-            setError('An error occurred. Please try again.')
+            setError(err.message || 'An error occurred. Please try again.')
         } finally {
+            clearTimeout(timeoutId)
             setLoading(false)
         }
     }
@@ -167,11 +185,10 @@ export const LoginPage = () => {
                                 key={role.key}
                                 type="button"
                                 onClick={() => handleRoleSwitch(role.key)}
-                                className={`flex h-9 items-center justify-center gap-1.5 rounded-[10px] text-[12.5px] transition-colors ${
-                                    isActive
-                                        ? 'border border-[#E0E7FF] bg-white font-medium text-[#2A4DD0] shadow-[0_1px_4px_#2A4DD015]'
-                                        : 'bg-transparent font-normal text-[#8892B0]'
-                                }`}
+                                className={`flex h-9 items-center justify-center gap-1.5 rounded-[10px] text-[12.5px] transition-colors ${isActive
+                                    ? 'border border-[#E0E7FF] bg-white font-medium text-[#2A4DD0] shadow-[0_1px_4px_#2A4DD015]'
+                                    : 'bg-transparent font-normal text-[#8892B0]'
+                                    }`}
                                 aria-pressed={isActive}
                             >
                                 <Icon className="h-4 w-4" />
@@ -185,13 +202,13 @@ export const LoginPage = () => {
                     <div className="relative">
                         <Mail className="pointer-events-none absolute left-[13px] top-1/2 h-4 w-4 -translate-y-1/2 text-[#A0ABCC]" />
                         <label htmlFor="email" className="sr-only">
-                            Email
+                            Email or Username
                         </label>
                         <input
                             id="email"
                             name="email"
-                            type="email"
-                            placeholder="Email"
+                            type="text"
+                            placeholder="Email / Username / Student ID"
                             value={formData.email}
                             onChange={handleChange}
                             className={inputBaseClass}
@@ -301,9 +318,8 @@ export const LoginPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleDemoFill(key)}
-                                className={`text-[11px] font-medium transition-colors ${
-                                    filledRole === key ? 'text-[#1D9E75]' : 'text-[#A0ABCC] hover:text-[#2A4DD0]'
-                                }`}
+                                className={`text-[11px] font-medium transition-colors ${filledRole === key ? 'text-[#1D9E75]' : 'text-[#A0ABCC] hover:text-[#2A4DD0]'
+                                    }`}
                             >
                                 {filledRole === key ? 'filled!' : 'copy'}
                             </button>

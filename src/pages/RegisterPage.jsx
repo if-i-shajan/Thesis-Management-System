@@ -21,8 +21,7 @@ const inputBaseClass =
     'h-11 w-full rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-3 text-[13.5px] text-[#1A1F36] placeholder:text-[#B0BAD0] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD020]'
 
 const getSelectClass = (hasValue) =>
-    `h-11 w-full appearance-none rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-10 text-[13.5px] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD018] ${
-        hasValue ? 'text-[#1A1F36]' : 'text-[#B0BAD0]'
+    `h-11 w-full appearance-none rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-10 text-[13.5px] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD018] ${hasValue ? 'text-[#1A1F36]' : 'text-[#B0BAD0]'
     }`
 
 const BANGLADESH_PHONE_REGEX = /^\+8801[3-9]\d{8}$/
@@ -43,11 +42,10 @@ const RoleButton = ({ icon: Icon, label, value, selectedRole, onSelect }) => {
         <button
             type="button"
             onClick={() => onSelect(value)}
-            className={`flex h-10 items-center justify-center gap-2 rounded-[10px] border text-sm transition-colors ${
-                isActive
-                    ? 'border-[#2A4DD0] bg-[#EEF2FF] font-medium text-[#2A4DD0]'
-                    : 'border-[#E0E7FF] bg-[#F8F9FF] font-normal text-[#8892B0] hover:border-[#C9D4FF]'
-            }`}
+            className={`flex h-10 items-center justify-center gap-2 rounded-[10px] border text-sm transition-colors ${isActive
+                ? 'border-[#2A4DD0] bg-[#EEF2FF] font-medium text-[#2A4DD0]'
+                : 'border-[#E0E7FF] bg-[#F8F9FF] font-normal text-[#8892B0] hover:border-[#C9D4FF]'
+                }`}
             aria-pressed={isActive}
         >
             <Icon className="h-4 w-4" />
@@ -76,6 +74,7 @@ export const RegisterPage = () => {
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
+    const [successMessage, setSuccessMessage] = useState(null)
 
     const departments = [
         { label: 'Computer Science', value: 'CS' },
@@ -135,6 +134,7 @@ export const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError(null)
+        setSuccessMessage(null)
 
         const fullName = `${formData.firstName} ${formData.lastName}`.trim()
 
@@ -183,6 +183,11 @@ export const RegisterPage = () => {
                 setError('Semester / Year is required')
                 return
             }
+
+            if (Number.isNaN(Number.parseInt(formData.semesterYear, 10))) {
+                setError('Semester must be a number')
+                return
+            }
         }
 
         if (formData.role === 'supervisor') {
@@ -203,22 +208,36 @@ export const RegisterPage = () => {
         }
 
         setLoading(true)
+        const timeoutId = setTimeout(() => {
+            setLoading(false)
+            setError('Creating account is taking too long (30+ seconds). Check your connection and try again.')
+        }, 30000)
 
         try {
             const result = await authService.signup(formData.email, formData.password, fullName, formData.role, {
                 registrationNumber: formData.registrationNumber,
+                studentId: formData.registrationNumber,
                 phoneNumber: formData.phoneNumber,
                 department: formData.department,
                 semesterYear: formData.semesterYear,
                 designation: formData.designation,
                 researchAreas: formData.researchAreas,
                 yearsOfExperience: formData.yearsOfExperience,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                username: formData.email.split('@')[0] || '',
             })
 
             if (result.success) {
+                if (result.requiresEmailConfirmation) {
+                    setSuccessMessage('Registration successful. Please verify your email, then sign in.')
+                    navigate('/login')
+                    return
+                }
+
                 setUser(result.data.user)
 
-                const profileResult = await authService.getUserProfile(result.data.user.id)
+                const profileResult = await authService.getUserProfile(result.data.user.uid)
                 if (profileResult.success) {
                     setProfile(profileResult.data)
 
@@ -235,6 +254,7 @@ export const RegisterPage = () => {
         } catch (err) {
             setError('An error occurred. Please try again.')
         } finally {
+            clearTimeout(timeoutId)
             setLoading(false)
         }
     }
@@ -253,6 +273,12 @@ export const RegisterPage = () => {
                 {error && (
                     <div className="mb-5">
                         <Alert type="error" message={error} onClose={() => setError(null)} />
+                    </div>
+                )}
+
+                {successMessage && (
+                    <div className="mb-5">
+                        <Alert type="success" message={successMessage} onClose={() => setSuccessMessage(null)} />
                     </div>
                 )}
 

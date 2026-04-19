@@ -21,7 +21,7 @@ export const NotificationsPage = () => {
     const fetchNotifications = async () => {
         setLoading(true)
         try {
-            const result = await notificationService.getNotifications(user.id)
+            const result = await notificationService.getNotifications(user.uid)
             if (result.success) {
                 setNotifications(result.data)
                 setError(null)

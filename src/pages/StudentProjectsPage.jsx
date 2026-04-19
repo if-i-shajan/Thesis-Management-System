@@ -71,7 +71,7 @@ export const StudentProjectsPage = () => {
             const project = projects.find((p) => p.id === projectId)
             if (project) {
                 // Send request to supervisor
-                const result = await requestService.sendRequest(user.id, project.created_by)
+                const result = await requestService.sendRequest(user.uid, project.created_by?.id || project.created_by)
 
                 if (result.success) {
                     setSuccessMessage('Request sent successfully!')

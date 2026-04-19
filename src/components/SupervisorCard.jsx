@@ -27,7 +27,7 @@ export const SupervisorCard = ({ supervisor, onRequest, onViewDetails }) => {
                     <MapPin className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div>
                         <p className="text-xs text-gray-600">Experience</p>
-                        <p className="font-semibold text-gray-900">{supervisor.experience} years</p>
+                        <p className="font-semibold text-gray-900">{supervisor.years_of_experience} years</p>
                     </div>
                 </div>
 

@@ -6,7 +6,6 @@ import { useAuth } from './hooks/useAuth'
 
 // Components
 import { Navigation } from './components/Navigation'
-import { LoadingSpinner } from './components/LoadingSpinner'
 import { Alert } from './components/Alert'
 import { ProtectedRoute } from './utils/ProtectedRoute'
 
@@ -27,12 +26,8 @@ import { NotificationsPage } from './pages/NotificationsPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 
 function App() {
-    const { isLoading, error } = useAuthStore()
+    const { error } = useAuthStore()
     useAuth() // Initialize auth
-
-    if (isLoading) {
-        return <LoadingSpinner fullPage />
-    }
 
     return (
         <Router>

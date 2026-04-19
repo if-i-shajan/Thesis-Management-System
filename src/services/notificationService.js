@@ -1,17 +1,30 @@
-import { getSupabaseClient } from './supabase'
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
+} from 'firebase/firestore'
+import { db } from './firebase'
+
+const mapDoc = (snap) => ({ id: snap.id, ...snap.data() })
 
 export const notificationService = {
     async getNotifications(userId) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(
+                collection(db, 'notifications'),
+                where('user_id', '==', userId),
+                orderBy('created_at', 'desc')
+            )
+            const snapshot = await getDocs(q)
+            return { success: true, data: snapshot.docs.map(mapDoc) }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -19,15 +32,9 @@ export const notificationService = {
 
     async markAsRead(notificationId) {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('notifications')
-                .update({ is_read: true })
-                .eq('id', notificationId)
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            await updateDoc(doc(db, 'notifications', notificationId), { is_read: true })
+            return { success: true, data: [] }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -35,21 +42,16 @@ export const notificationService = {
 
     async createNotification(userId, message, type = 'info') {
         try {
-            const supabase = getSupabaseClient()
-            const { data, error } = await supabase
-                .from('notifications')
-                .insert([
-                    {
-                        user_id: userId,
-                        message,
-                        type,
-                        is_read: false,
-                    },
-                ])
-                .select()
-
-            if (error) throw error
-            return { success: true, data }
+            if (!db) throw new Error('Firebase is not configured.')
+            const payload = {
+                user_id: userId,
+                message,
+                type,
+                is_read: false,
+                created_at: serverTimestamp(),
+            }
+            const docRef = await addDoc(collection(db, 'notifications'), payload)
+            return { success: true, data: [{ id: docRef.id, ...payload }] }
         } catch (error) {
             return { success: false, error: error.message }
         }
@@ -57,13 +59,8 @@ export const notificationService = {
 
     async deleteNotification(notificationId) {
         try {
-            const supabase = getSupabaseClient()
-            const { error } = await supabase
-                .from('notifications')
-                .delete()
-                .eq('id', notificationId)
-
-            if (error) throw error
+            if (!db) throw new Error('Firebase is not configured.')
+            await deleteDoc(doc(db, 'notifications', notificationId))
             return { success: true }
         } catch (error) {
             return { success: false, error: error.message }
@@ -72,15 +69,14 @@ export const notificationService = {
 
     async getUnreadCount(userId) {
         try {
-            const supabase = getSupabaseClient()
-            const { count, error } = await supabase
-                .from('notifications')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .eq('is_read', false)
-
-            if (error) throw error
-            return { success: true, count }
+            if (!db) throw new Error('Firebase is not configured.')
+            const q = query(
+                collection(db, 'notifications'),
+                where('user_id', '==', userId),
+                where('is_read', '==', false)
+            )
+            const snapshot = await getDocs(q)
+            return { success: true, count: snapshot.size }
         } catch (error) {
             return { success: false, error: error.message }
         }

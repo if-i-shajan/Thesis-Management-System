@@ -25,7 +25,7 @@ export const SupervisorRequestsPage = () => {
         setLoading(true)
         try {
             // Get supervisor ID from user
-            const result = await requestService.getRequestsForSupervisor(user.id)
+            const result = await requestService.getRequestsForSupervisor(user.uid)
             if (result.success) {
                 setRequests(result.data)
                 setError(null)
@@ -101,7 +101,7 @@ export const SupervisorRequestsPage = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
                                             <h3 className="font-bold text-lg text-gray-900">
-                                                {request.students?.user_id || 'Unknown Student'}
+                                                {request.students?.user_profiles?.full_name || 'Unknown Student'}
                                             </h3>
                                             <Badge variant={request.status === 'pending' ? 'warning' : request.status === 'accepted' ? 'success' : 'danger'}>
                                                 {request.status}
