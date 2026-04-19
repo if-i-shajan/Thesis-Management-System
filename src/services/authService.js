@@ -1,12 +1,71 @@
 import { supabase } from './supabase'
 
+const ALLOWED_SIGNUP_ROLES = ['student', 'supervisor']
+
 export const authService = {
-    async signup(email, password, fullName, role = 'student') {
+    async signup(email, password, fullName, role = 'student', additionalInfo = {}) {
         try {
+            const normalizedRole = (role || 'student').toLowerCase()
+            if (!ALLOWED_SIGNUP_ROLES.includes(normalizedRole)) {
+                return {
+                    success: false,
+                    error: 'Invalid role selected. Please choose Student or Supervisor.',
+                }
+            }
+
+            const registrationNumber = (additionalInfo.registrationNumber || '').trim()
+            const phoneNumber = (additionalInfo.phoneNumber || '').trim()
+            const department = (additionalInfo.department || '').trim()
+            const semesterYear = (additionalInfo.semesterYear || '').trim()
+            const designation = (additionalInfo.designation || '').trim()
+            const researchAreas = (additionalInfo.researchAreas || '').trim()
+            const yearsOfExperience = (additionalInfo.yearsOfExperience || '').toString().trim()
+
+            if (!phoneNumber || !department) {
+                return {
+                    success: false,
+                    error: 'Please fill in all required registration fields.',
+                }
+            }
+
+            if (normalizedRole === 'student' && (!registrationNumber || !semesterYear)) {
+                return {
+                    success: false,
+                    error: 'Please fill in all required student fields.',
+                }
+            }
+
+            if (normalizedRole === 'supervisor' && (!designation || !researchAreas || !yearsOfExperience)) {
+                return {
+                    success: false,
+                    error: 'Please fill in all required supervisor fields.',
+                }
+            }
+
+            const metadata = {
+                phone_number: phoneNumber,
+                department,
+                role: normalizedRole,
+            }
+
+            if (normalizedRole === 'student') {
+                metadata.registration_number = registrationNumber
+                metadata.semester_year = semesterYear
+            }
+
+            if (normalizedRole === 'supervisor') {
+                metadata.designation = designation
+                metadata.research_areas = researchAreas
+                metadata.years_of_experience = yearsOfExperience
+            }
+
             // Sign up user
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
+                options: {
+                    data: metadata,
+                },
             })
 
             if (error) throw error
@@ -20,7 +79,7 @@ export const authService = {
                             id: data.user.id,
                             email,
                             full_name: fullName,
-                            role,
+                            role: normalizedRole,
                         },
                     ])
 

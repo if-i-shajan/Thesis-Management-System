@@ -3,4 +3,26 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const isPlaceholderValue = (value) => {
+	if (!value) return true
+	const normalized = value.trim().toLowerCase()
+	return normalized.includes('your_') || normalized.includes('_here')
+}
+
+const hasValidSupabaseUrl = (value) => {
+	try {
+		const parsed = new URL(value)
+		return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+	} catch {
+		return false
+	}
+}
+
+export const isSupabaseConfigured =
+	!isPlaceholderValue(supabaseUrl) &&
+	!isPlaceholderValue(supabaseAnonKey) &&
+	hasValidSupabaseUrl(supabaseUrl)
+
+export const supabase = isSupabaseConfigured
+	? createClient(supabaseUrl, supabaseAnonKey)
+	: null

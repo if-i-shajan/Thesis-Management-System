@@ -2,21 +2,68 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../context/store'
 import { authService } from '../services/authService'
-import { Button } from '../components/Button'
-import { Input, Select } from '../components/FormInputs'
 import { Alert } from '../components/Alert'
-import { User, Mail, Lock } from 'lucide-react'
+import {
+    User,
+    Mail,
+    Lock,
+    Phone,
+    Hash,
+    GraduationCap,
+    Briefcase,
+    Building2,
+    CalendarDays,
+} from 'lucide-react'
+
+const inputBaseClass =
+    'h-11 w-full rounded-[10px] border border-[#E0E7FF] bg-[#F8F9FF] pl-10 pr-3 text-[13.5px] text-[#1A1F36] placeholder:text-[#B0BAD0] outline-none transition-all focus:border-[#2A4DD0] focus:bg-white focus:ring-[3px] focus:ring-[#2A4DD020]'
+
+const iconClass = 'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A0ABCC]'
+
+const SectionDivider = ({ label }) => (
+    <div className="flex items-center gap-3 pt-1">
+        <span className="text-[10px] uppercase tracking-[1.2px] text-[#8892B0]">{label}</span>
+        <div className="h-px flex-1 bg-[#E0E7FF]" />
+    </div>
+)
+
+const RoleButton = ({ icon: Icon, label, value, selectedRole, onSelect }) => {
+    const isActive = selectedRole === value
+
+    return (
+        <button
+            type="button"
+            onClick={() => onSelect(value)}
+            className={`flex h-10 items-center justify-center gap-2 rounded-[10px] border text-sm transition-colors ${
+                isActive
+                    ? 'border-[#2A4DD0] bg-[#EEF2FF] font-medium text-[#2A4DD0]'
+                    : 'border-[#E0E7FF] bg-[#F8F9FF] font-normal text-[#8892B0] hover:border-[#C9D4FF]'
+            }`}
+            aria-pressed={isActive}
+        >
+            <Icon className="h-4 w-4" />
+            <span>{label}</span>
+        </button>
+    )
+}
 
 export const RegisterPage = () => {
     const navigate = useNavigate()
     const { setUser, setProfile } = useAuthStore()
     const [formData, setFormData] = useState({
-        fullName: '',
+        firstName: '',
+        lastName: '',
         email: '',
+        registrationNumber: '',
+        phoneNumber: '',
         password: '',
         confirmPassword: '',
         role: 'student',
         department: '',
+        semesterYear: '',
+        designation: '',
+        researchAreas: '',
+        yearsOfExperience: '',
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
@@ -29,15 +76,47 @@ export const RegisterPage = () => {
         { label: 'Data Science', value: 'DS' },
     ]
 
+    const designations = [
+        { label: 'Lecturer', value: 'Lecturer' },
+        { label: 'Assistant Professor', value: 'Assistant Professor' },
+        { label: 'Professor', value: 'Professor' },
+    ]
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
+
+    const setRole = (role) => {
+        setFormData((prev) => ({ ...prev, role }))
+    }
+
+    const getPasswordStrength = (password) => {
+        let score = 0
+        if (password.length >= 8) score += 1
+        if (/[A-Z]/.test(password)) score += 1
+        if (/[0-9]/.test(password)) score += 1
+        if (/[^A-Za-z0-9]/.test(password)) score += 1
+        return score
+    }
+
+    const passwordStrength = getPasswordStrength(formData.password)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError(null)
 
-        // Validation
+        const fullName = `${formData.firstName} ${formData.lastName}`.trim()
+
+        if (!formData.firstName.trim() || !formData.lastName.trim()) {
+            setError('First Name and Last Name are required')
+            return
+        }
+
+        if (!fullName) {
+            setError('Full Name is required')
+            return
+        }
+
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match')
             return
@@ -48,15 +127,57 @@ export const RegisterPage = () => {
             return
         }
 
+        if (!formData.department) {
+            setError('Department is required')
+            return
+        }
+
+        if (!formData.phoneNumber.trim()) {
+            setError('Phone Number is required')
+            return
+        }
+
+        if (formData.role === 'student') {
+            if (!formData.registrationNumber.trim()) {
+                setError('Student ID / Registration Number is required')
+                return
+            }
+
+            if (!formData.semesterYear.trim()) {
+                setError('Semester / Year is required')
+                return
+            }
+        }
+
+        if (formData.role === 'supervisor') {
+            if (!formData.designation.trim()) {
+                setError('Designation is required')
+                return
+            }
+
+            if (!formData.researchAreas.trim()) {
+                setError('Research Areas is required')
+                return
+            }
+
+            if (!formData.yearsOfExperience.toString().trim()) {
+                setError('Years of Experience is required')
+                return
+            }
+        }
+
         setLoading(true)
 
         try {
-            const result = await authService.signup(
-                formData.email,
-                formData.password,
-                formData.fullName,
-                formData.role
-            )
+            const result = await authService.signup(formData.email, formData.password, fullName, formData.role, {
+                registrationNumber: formData.registrationNumber,
+                phoneNumber: formData.phoneNumber,
+                department: formData.department,
+                semesterYear: formData.semesterYear,
+                designation: formData.designation,
+                researchAreas: formData.researchAreas,
+                yearsOfExperience: formData.yearsOfExperience,
+            })
 
             if (result.success) {
                 setUser(result.data.user)
@@ -68,7 +189,6 @@ export const RegisterPage = () => {
                     const dashboards = {
                         student: '/student/projects',
                         supervisor: '/supervisor/requests',
-                        admin: '/admin/dashboard',
                     }
 
                     navigate(dashboards[formData.role] || '/student/projects')
@@ -84,113 +204,311 @@ export const RegisterPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-                {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="inline-block w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center mb-4">
-                        <span className="text-white font-bold text-3xl">TMS</span>
+        <div className="min-h-screen bg-[#F0F4FF] px-4 py-8">
+            <div className="mx-auto w-full max-w-[440px] rounded-[20px] border border-[#E0E7FF] bg-white px-8 py-10 shadow-[0_12px_40px_rgba(42,77,208,0.08)]">
+                <div className="mb-6">
+                    <div className="mb-4 flex items-start gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EEF2FF]">
+                            <span className="text-base font-semibold text-[#2A4DD0]">TMS</span>
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold text-[#1A1F36]">ThesisFlow</h1>
+                            <p className="mt-1 text-sm text-[#8892B0]">Create your student or supervisor account</p>
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-                    <p className="text-gray-600 mt-2">Join our thesis management system</p>
+                    <span className="inline-flex rounded-full bg-[#EEF2FF] px-3 py-1 text-xs font-medium text-[#2A4DD0]">
+                        Step 1 - Basic Information
+                    </span>
                 </div>
 
-                {/* Register Card */}
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                    {error && (
-                        <div className="mb-6">
-                            <Alert type="error" message={error} onClose={() => setError(null)} />
-                        </div>
-                    )}
+                {error && (
+                    <div className="mb-5">
+                        <Alert type="error" message={error} onClose={() => setError(null)} />
+                    </div>
+                )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="relative">
-                            <User className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                            <Input
-                                name="fullName"
-                                placeholder="Full Name"
-                                value={formData.fullName}
-                                onChange={handleChange}
-                                className="pl-12"
-                                required
-                            />
-                        </div>
-
-                        <div className="relative">
-                            <Mail className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                            <Input
-                                name="email"
-                                type="email"
-                                placeholder="Email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="pl-12"
-                                required
-                            />
-                        </div>
-
-                        <Select
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            options={[
-                                { label: 'Student', value: 'student' },
-                                { label: 'Supervisor', value: 'supervisor' },
-                                { label: 'Admin', value: 'admin' },
-                            ]}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <SectionDivider label="Account Type" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <RoleButton
+                            icon={User}
+                            label="Student"
+                            value="student"
+                            selectedRole={formData.role}
+                            onSelect={setRole}
                         />
+                        <RoleButton
+                            icon={Briefcase}
+                            label="Supervisor"
+                            value="supervisor"
+                            selectedRole={formData.role}
+                            onSelect={setRole}
+                        />
+                    </div>
 
-                        <Select
+                    <SectionDivider label="Personal Details" />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="relative">
+                            <label htmlFor="firstName" className="sr-only">
+                                First Name
+                            </label>
+                            <User className={iconClass} />
+                            <input
+                                id="firstName"
+                                name="firstName"
+                                placeholder="First Name"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                className={inputBaseClass}
+                                required
+                            />
+                        </div>
+
+                        <div className="relative">
+                            <label htmlFor="lastName" className="sr-only">
+                                Last Name
+                            </label>
+                            <User className={iconClass} />
+                            <input
+                                id="lastName"
+                                name="lastName"
+                                placeholder="Last Name"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                className={inputBaseClass}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="relative">
+                        <label htmlFor="email" className="sr-only">
+                            Email
+                        </label>
+                        <Mail className={iconClass} />
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder="Email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className={inputBaseClass}
+                            required
+                        />
+                    </div>
+
+                    <div className={`grid gap-3 ${formData.role === 'student' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                        {formData.role === 'student' && (
+                            <div className="relative">
+                                <label htmlFor="registrationNumber" className="sr-only">
+                                    Student ID / Registration Number
+                                </label>
+                                <Hash className={iconClass} />
+                                <input
+                                    id="registrationNumber"
+                                    name="registrationNumber"
+                                    placeholder="Student ID / Registration Number"
+                                    value={formData.registrationNumber}
+                                    onChange={handleChange}
+                                    className={inputBaseClass}
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        <div className="relative">
+                            <label htmlFor="phoneNumber" className="sr-only">
+                                Phone Number
+                            </label>
+                            <Phone className={iconClass} />
+                            <input
+                                id="phoneNumber"
+                                name="phoneNumber"
+                                type="tel"
+                                placeholder="Phone Number"
+                                value={formData.phoneNumber}
+                                onChange={handleChange}
+                                className={inputBaseClass}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <SectionDivider label="Academic Information" />
+                    <div className="relative">
+                        <label htmlFor="department" className="sr-only">
+                            Department
+                        </label>
+                        <Building2 className={iconClass} />
+                        <select
+                            id="department"
                             name="department"
                             value={formData.department}
                             onChange={handleChange}
-                            options={[{ label: 'Select Department', value: '' }, ...departments]}
-                        />
-
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                            <Input
-                                name="password"
-                                type="password"
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                className="pl-12"
-                                required
-                            />
-                        </div>
-
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                            <Input
-                                name="confirmPassword"
-                                type="password"
-                                placeholder="Confirm Password"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                className="pl-12"
-                                required
-                            />
-                        </div>
-
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            fullWidth
-                            disabled={loading}
-                            className="mt-6"
+                            className={`${inputBaseClass} appearance-none`}
+                            required
                         >
-                            {loading ? 'Creating Account...' : 'Create Account'}
-                        </Button>
-                    </form>
+                            <option value="">Department</option>
+                            {departments.map((department) => (
+                                <option key={department.value} value={department.value}>
+                                    {department.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                    <p className="text-center text-gray-600 mt-6">
+                    {formData.role === 'student' && (
+                        <div className="relative">
+                            <label htmlFor="semesterYear" className="sr-only">
+                                Semester / Year
+                            </label>
+                            <CalendarDays className={iconClass} />
+                            <input
+                                id="semesterYear"
+                                name="semesterYear"
+                                placeholder="Semester / Year (e.g., 8th Semester, Final Year)"
+                                value={formData.semesterYear}
+                                onChange={handleChange}
+                                className={inputBaseClass}
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {formData.role === 'supervisor' && (
+                        <>
+                            <SectionDivider label="Academic & Professional Information" />
+                            <div className="relative">
+                                <label htmlFor="designation" className="sr-only">
+                                    Designation
+                                </label>
+                                <Briefcase className={iconClass} />
+                                <select
+                                    id="designation"
+                                    name="designation"
+                                    value={formData.designation}
+                                    onChange={handleChange}
+                                    className={`${inputBaseClass} appearance-none`}
+                                    required
+                                >
+                                    <option value="">Designation</option>
+                                    {designations.map((designation) => (
+                                        <option key={designation.value} value={designation.value}>
+                                            {designation.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="relative">
+                                <label htmlFor="researchAreas" className="sr-only">
+                                    Research Areas
+                                </label>
+                                <GraduationCap className={iconClass} />
+                                <input
+                                    id="researchAreas"
+                                    name="researchAreas"
+                                    placeholder="Research Areas (e.g., AI, Machine Learning, Cybersecurity)"
+                                    value={formData.researchAreas}
+                                    onChange={handleChange}
+                                    className={inputBaseClass}
+                                    required
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <label htmlFor="yearsOfExperience" className="sr-only">
+                                    Years of Experience
+                                </label>
+                                <Hash className={iconClass} />
+                                <input
+                                    id="yearsOfExperience"
+                                    name="yearsOfExperience"
+                                    type="number"
+                                    min="0"
+                                    placeholder="Years of Experience"
+                                    value={formData.yearsOfExperience}
+                                    onChange={handleChange}
+                                    className={inputBaseClass}
+                                    required
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    <SectionDivider label="Security" />
+                    <div className="relative">
+                        <label htmlFor="password" className="sr-only">
+                            Password
+                        </label>
+                        <Lock className={iconClass} />
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="Password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            className={inputBaseClass}
+                            required
+                        />
+                    </div>
+
+                    <div className="mt-1 flex gap-1">
+                        {[1, 2, 3, 4].map((level) => {
+                            let activeColor = '#E0E7FF'
+
+                            if (passwordStrength >= level) {
+                                if (passwordStrength === 1) activeColor = '#E24B4A'
+                                if (passwordStrength === 2) activeColor = '#EF9F27'
+                                if (passwordStrength === 3) activeColor = '#2A4DD0'
+                                if (passwordStrength >= 4) activeColor = '#1D9E75'
+                            }
+
+                            return (
+                                <span
+                                    key={level}
+                                    className="h-[3px] flex-1 rounded-[2px]"
+                                    style={{ backgroundColor: activeColor }}
+                                    aria-hidden="true"
+                                />
+                            )
+                        })}
+                    </div>
+
+                    <div className="relative">
+                        <label htmlFor="confirmPassword" className="sr-only">
+                            Confirm Password
+                        </label>
+                        <Lock className={iconClass} />
+                        <input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            placeholder="Confirm Password"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            className={inputBaseClass}
+                            required
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="mt-2 h-[46px] w-full rounded-xl bg-[#2A4DD0] text-sm font-medium text-white transition-colors hover:bg-[#1E3DB5] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        {loading ? 'Creating account...' : 'Create account'}
+                    </button>
+
+                    <p className="pt-1 text-center text-sm text-[#8892B0]">
                         Already have an account?{' '}
-                        <Link to="/login" className="text-blue-600 font-semibold hover:text-blue-700">
+                        <Link to="/login" className="font-medium text-[#2A4DD0] hover:text-[#1E3DB5]">
                             Sign in
                         </Link>
                     </p>
-                </div>
+                </form>
             </div>
         </div>
     )

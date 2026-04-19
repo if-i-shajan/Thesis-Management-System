@@ -7,6 +7,7 @@ import { useAuth } from './hooks/useAuth'
 // Components
 import { Navigation } from './components/Navigation'
 import { LoadingSpinner } from './components/LoadingSpinner'
+import { Alert } from './components/Alert'
 import { ProtectedRoute } from './utils/ProtectedRoute'
 
 // Pages
@@ -26,7 +27,7 @@ import { NotificationsPage } from './pages/NotificationsPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 
 function App() {
-    const { isLoading } = useAuthStore()
+    const { isLoading, error } = useAuthStore()
     useAuth() // Initialize auth
 
     if (isLoading) {
@@ -37,6 +38,11 @@ function App() {
         <Router>
             <div className="min-h-screen bg-gray-50">
                 <Navigation />
+                {error && (
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+                        <Alert type="error" message={error} />
+                    </div>
+                )}
                 <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<HomePage />} />

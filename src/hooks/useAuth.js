@@ -1,12 +1,18 @@
 import { useEffect } from 'react'
 import { useAuthStore } from '../context/store'
 import { authService } from '../services/authService'
-import { supabase } from '../services/supabase'
+import { isSupabaseConfigured, supabase } from '../services/supabase'
 
 export const useAuth = () => {
     const { user, profile, setUser, setProfile, setLoading, setError } = useAuthStore()
 
     useEffect(() => {
+        if (!isSupabaseConfigured || !supabase) {
+            setError('Supabase is not configured. Set valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY values in .env.')
+            setLoading(false)
+            return
+        }
+
         checkAuth()
 
         const {
