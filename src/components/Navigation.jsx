@@ -1,15 +1,31 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuthStore, useNotificationStore } from '../context/store'
 import { Bell, User, LogOut, Menu, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
+import { notificationService } from '../services/notificationService'
 import { BrandLogo } from './BrandLogo'
 
 export const Navigation = () => {
     const navigate = useNavigate()
     const { user, profile, setUser, setProfile } = useAuthStore()
-    const { unreadCount } = useNotificationStore()
+    const { unreadCount, setNotifications, setUnreadCount } = useNotificationStore()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+    useEffect(() => {
+        if (!user?.uid) {
+            setNotifications([])
+            setUnreadCount(0)
+            return
+        }
+
+        const unsubscribe = notificationService.subscribeToNotifications(user.uid, (items) => {
+            setNotifications(items)
+            setUnreadCount(items.filter((item) => !item.is_read).length)
+        })
+
+        return () => unsubscribe()
+    }, [user?.uid, setNotifications, setUnreadCount])
 
     const handleLogout = async () => {
         await authService.logout()
@@ -20,13 +36,14 @@ export const Navigation = () => {
 
     const navLinks = {
         student: [
+            { label: 'Dashboard', path: '/student/dashboard' },
             { label: 'Projects', path: '/student/projects' },
             { label: 'Supervisors', path: '/student/supervisors' },
             { label: 'My Requests', path: '/student/requests' },
         ],
         supervisor: [
+            { label: 'Dashboard', path: '/supervisor/dashboard' },
             { label: 'Requests', path: '/supervisor/requests' },
-            { label: 'Students', path: '/supervisor/students' },
             { label: 'Projects', path: '/supervisor/projects' },
         ],
         admin: [

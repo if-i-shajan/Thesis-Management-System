@@ -135,7 +135,7 @@ export const LoginPage = () => {
 
                     const dashboards = {
                         student: '/student/projects',
-                        supervisor: '/supervisor/requests',
+                        supervisor: '/supervisor/dashboard',
                         admin: '/admin/dashboard',
                     }
 

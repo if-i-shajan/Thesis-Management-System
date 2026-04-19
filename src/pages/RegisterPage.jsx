@@ -243,7 +243,7 @@ export const RegisterPage = () => {
 
                     const dashboards = {
                         student: '/student/projects',
-                        supervisor: '/supervisor/requests',
+                        supervisor: '/supervisor/dashboard',
                     }
 
                     navigate(dashboards[formData.role] || '/student/projects')

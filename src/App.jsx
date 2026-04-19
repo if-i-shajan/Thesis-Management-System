@@ -18,16 +18,27 @@ import { ProtectedRoute } from './utils/ProtectedRoute'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { StudentDashboardPage } from './pages/StudentDashboardPage'
 import { StudentProjectsPage } from './pages/StudentProjectsPage'
 import { StudentSupervisorsPage } from './pages/StudentSupervisorsPage'
 import { StudentRequestsPage } from './pages/StudentRequestsPage'
+import { SupervisorDashboardPage } from './pages/SupervisorDashboardPage'
 import { SupervisorRequestsPage } from './pages/SupervisorRequestsPage'
+import { SupervisorProjectsPage } from './pages/SupervisorProjectsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 
 function App() {
-    const { error } = useAuthStore()
+    const { error, profile } = useAuthStore()
     useAuth() // Initialize auth
+
+    const dashboardPathByRole = {
+        student: '/student/dashboard',
+        supervisor: '/supervisor/dashboard',
+        admin: '/admin/dashboard',
+    }
+
+    const defaultDashboardPath = dashboardPathByRole[profile?.role] || '/'
 
     return (
         <Router>
@@ -45,6 +56,30 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
 
                     {/* Student Routes */}
+                    <Route
+                        path="/student/dashboard"
+                        element={
+                            <ProtectedRoute requiredRole="student">
+                                <StudentDashboardPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <Navigate to={defaultDashboardPath} replace />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <Navigate to={defaultDashboardPath} replace />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route
                         path="/student/projects"
                         element={
@@ -72,10 +107,26 @@ function App() {
 
                     {/* Supervisor Routes */}
                     <Route
+                        path="/supervisor/dashboard"
+                        element={
+                            <ProtectedRoute requiredRole="supervisor">
+                                <SupervisorDashboardPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
                         path="/supervisor/requests"
                         element={
                             <ProtectedRoute requiredRole="supervisor">
                                 <SupervisorRequestsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/supervisor/projects"
+                        element={
+                            <ProtectedRoute requiredRole="supervisor">
+                                <SupervisorProjectsPage />
                             </ProtectedRoute>
                         }
                     />

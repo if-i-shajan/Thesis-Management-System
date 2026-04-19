@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+
+
 -- SUPERVISORS TABLE
 CREATE TABLE IF NOT EXISTS supervisors (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
