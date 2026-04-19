@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../context/store'
 import { authService } from '../services/authService'
 import { Alert } from '../components/Alert'
+import { BrandLogo } from '../components/BrandLogo'
 import {
     User,
     Mail,
@@ -207,15 +208,8 @@ export const RegisterPage = () => {
         <div className="min-h-screen bg-[#F0F4FF] px-4 py-8">
             <div className="mx-auto w-full max-w-[440px] rounded-[20px] border border-[#E0E7FF] bg-white px-8 py-10 shadow-[0_12px_40px_rgba(42,77,208,0.08)]">
                 <div className="mb-6">
-                    <div className="mb-4 flex items-start gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EEF2FF]">
-                            <span className="text-base font-semibold text-[#2A4DD0]">TMS</span>
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold text-[#1A1F36]">ThesisFlow</h1>
-                            <p className="mt-1 text-sm text-[#8892B0]">Create your student or supervisor account</p>
-                        </div>
-                    </div>
+                    <BrandLogo className="mb-4" />
+                    <p className="text-sm text-[#8892B0]">Create your student or supervisor account</p>
                     <span className="inline-flex rounded-full bg-[#EEF2FF] px-3 py-1 text-xs font-medium text-[#2A4DD0]">
                         Step 1 - Basic Information
                     </span>

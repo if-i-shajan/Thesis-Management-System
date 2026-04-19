@@ -3,6 +3,7 @@ import { useAuthStore, useNotificationStore } from '../context/store'
 import { Bell, User, LogOut, Menu, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
+import { BrandLogo } from './BrandLogo'
 
 export const Navigation = () => {
     const navigate = useNavigate()
@@ -44,13 +45,8 @@ export const Navigation = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">TMS</span>
-                        </div>
-                        <span className="text-xl font-bold text-gray-900 hidden sm:inline">
-                            Thesis Management
-                        </span>
+                    <Link to="/" className="flex items-center">
+                        <BrandLogo showSubtitle={false} />
                     </Link>
 
                     {/* Desktop Navigation */}
