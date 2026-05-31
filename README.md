@@ -505,10 +505,10 @@ Contributions are welcome! Please follow these steps:
 
 This project is licensed under the MIT License - see LICENSE file for details.
 
-## 📞 Support
+## 📮 Contact & Support
 
-For support, email support@thesis-management.com or open an issue in the repository.
+For questions, issues, or feedback:
+- 📧 Email:  jmifthakharul.shajan@gmail.com
 
 ---
 
-**Happy coding! 🚀**
